@@ -13,11 +13,20 @@ threads = 6
 result: $(cleans) ra
 	./ra $(limit) $(threads) $(cleans) > result
 
+result-small: $(cleans) ra-small
+	./ra-small $(limit) $(threads) $(cleans) > result-small
+
 clean:
 	rm -f output/* conf/* clean/* result ra rf slimmer
 
+mtwist.o: mtwist.c mtwist.h
+	gcc -Wall -g2 -O2 -c -o mtwist.o mtwist.c
+
 ra: ra.c
 	gcc -Wall -g2 -lavl -lpthread -O2 -o ra ra.c
+
+ra-small: ra-small.c mtwist.o
+	gcc -Wall -g2 -lavl -lpthread -O2 -o ra-small ra-small.c mtwist.o
 
 rf: rf.c
 	gcc -Wall -g2 -lavl -O2 -o rf rf.c
