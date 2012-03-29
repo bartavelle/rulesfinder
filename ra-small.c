@@ -13,17 +13,18 @@
 
 #define LINELEN         200
 #define MAXMEM          14500000000L
-#define POPSIZE         128
-#define MUTRATE         5
-#define INMUTRATE       10
+#define MUTRATE         10
+#define INMUTRATE       20
 #define NBRULES         64
-#define MUTLEVEL        10
+#define BASEPOPSIZE     128
 
 unsigned int matchlimit;
 unsigned int nbthreads;
 unsigned int nbfiles;
 unsigned int nbytes;
+unsigned int POPSIZE;
 avl_tree_t * dictroot;
+unsigned long long totalcoverage;
 
 void SETBIT(unsigned char * table, unsigned int index)
 {
@@ -40,6 +41,7 @@ struct s_brule
 {
     char * rule;
     char * bitcover;
+    unsigned int count;
 } * brules;
 
 struct s_individual
@@ -48,7 +50,7 @@ struct s_individual
     unsigned int fitness;
 };
 
-struct s_individual pop[POPSIZE];
+struct s_individual * pop;
 struct s_individual best;
 
 struct s_rule_link
@@ -173,7 +175,6 @@ struct s_rule_link * newlink(char * rule)
 		perror("strdup");
 		exit(50);
 	}
-	//out->coverage = avl_alloc_tree((avl_compare_t)int_cmp, (avl_freeitem_t)free);
 	out->coverage = avl_alloc_tree((avl_compare_t)ptr_cmp, NULL);
 	return out;
 }
@@ -312,6 +313,24 @@ unsigned int calcfitness(struct s_individual * ind)
     return out;
 }
 
+struct s_brule * pickrule()
+{
+    unsigned long long curval;
+    unsigned long long target;
+    unsigned int i;
+
+    curval = 0;
+    target = mt_llrand() % totalcoverage;
+    for(i=0;i<nbfiles;i++)
+    {
+        curval += brules[i].count;
+        if(curval >= target)
+            return &brules[i];
+    }
+    fprintf(stderr, "wtf %s %lld/%lld ?\n", __func__, curval, target);
+    return &brules[mt_llrand() % nbfiles];
+}
+
 void indiv_init(struct s_individual * ind)
 {
     unsigned i;
@@ -325,7 +344,7 @@ tryagain:
         try++;
         if(try > 10000)
             fprintf(stderr, "%s stall, i=%d\n", __func__, i);
-        currule = &brules[mt_llrand() % nbfiles];
+        currule = pickrule();
         if(ind->b[i] == currule)
             goto tryagain;
         ind->b[i] = currule;
@@ -382,7 +401,7 @@ void descend(struct s_brule ** dst, struct s_brule ** src)
             fprintf(stderr, "%s stall, i=%d\n", __func__, i);
 anothergene:
         if( (mt_lrand() & 0xff) < INMUTRATE )
-            currule = &brules[mt_llrand() % nbfiles];
+            currule = pickrule();
         else
             currule = src[ (mt_lrand() % (NBRULES*2)) ];
         for(j=0;j<i;j++) if(dst[j]==currule)
@@ -391,14 +410,23 @@ anothergene:
     }
 }
 
-void reproduction(unsigned long long total)
+struct s_reproduction_args
+{
+    unsigned long long total;
+    unsigned int index;
+};
+
+void reproduction(void * x)
 {
     unsigned int i;
-    struct s_individual npop[POPSIZE];
+    struct s_individual npop[BASEPOPSIZE];
     struct s_brule * parentrules[NBRULES*2];
     struct s_individual * curparent;
+    struct s_reproduction_args * args = x;
+    unsigned long long total = args->total;
+    unsigned int index = args->index;
 
-    for(i=0;i<POPSIZE;i++)
+    for(i=0;i<BASEPOPSIZE;i++)
     {
         if( (mt_lrand()&0xff) < MUTRATE )
         {
@@ -413,7 +441,7 @@ void reproduction(unsigned long long total)
         descend(npop[i].b, parentrules);
         npop[i].fitness = calcfitness(&npop[i]);
     }
-    memcpy(pop, npop, sizeof(npop));
+    memcpy(&pop[index*BASEPOPSIZE], npop, sizeof(npop));
 }
 
 int main(int argc, char ** argv)
@@ -425,6 +453,7 @@ int main(int argc, char ** argv)
 	unsigned int maxval;
 	struct s_rule_link * root;
 	struct s_rule_link * curlink;
+    struct s_reproduction_args * rargs;
     unsigned int value;
     unsigned int gen;
     unsigned int total;
@@ -441,10 +470,13 @@ int main(int argc, char ** argv)
 	if(nbthreads == 0)
 		nbthreads = 1;
 	
+    POPSIZE = nbthreads * BASEPOPSIZE;
+    pop = xmalloc(POPSIZE*sizeof(struct s_individual));
 	nbfiles = argc-3;
 	threads = xmalloc(sizeof(pthread_t)*nbthreads);
 	memset(threads, 0, sizeof(pthread_t)*nbthreads);
 	ids = xmalloc(sizeof(unsigned int)*nbthreads);
+    rargs = xmalloc(sizeof(struct s_reproduction_args)*nbthreads);
 	rulejob = xmalloc(sizeof(struct s_rulejob)*nbfiles);
 	for(i=0;i<nbfiles;i++)
 	{
@@ -492,6 +524,7 @@ int main(int argc, char ** argv)
     initweigth();
     curlink = root;
     i = 0;
+    totalcoverage = 0;
     while(curlink)
     {
         brules[i].bitcover = xmalloc( nbytes );
@@ -516,13 +549,16 @@ int main(int argc, char ** argv)
             fprintf(stderr, "%d != %d [%d]\n", ccount, avl_count(curlink->coverage), j);
             exit(4);
         }
+        fprintf(stderr, "ccount %d = %d\n", i, ccount);
+        brules[i].count = ccount;
+        totalcoverage += ccount;
         i++;
         avl_free_tree(curlink->coverage);
         curlink->coverage = NULL;
         curlink = curlink->next;
     }
     nbfiles = i;
-	fprintf(stderr, "start crunching (%d passwords, %d rules)\n", maxval, nbfiles);
+	fprintf(stderr, "start crunching (%d passwords, %d rules) totalcoverage=%lld\n", maxval, nbfiles, totalcoverage);
 
     best.fitness = 0;
     for(i=0;i<POPSIZE;i++)
@@ -539,7 +575,19 @@ int main(int argc, char ** argv)
         }
         fprintf(stderr, "\n");
         gen++;
-        reproduction(total);
+        for(i=0;i<nbthreads;i++)
+        {
+            rargs[i].total = total;
+            rargs[i].index = i;
+            if(pthread_create(&threads[i], NULL, reproduction, &rargs[i]))
+            {
+                fprintf(stderr, "error, could not create thread for computation %d\n", i);
+                perror("pthread_create");
+                return 1;
+            }
+        }
+        for(i=0;i<nbthreads;i++)
+            pthread_join( threads[i], NULL );
     }
 
 	return 0;
