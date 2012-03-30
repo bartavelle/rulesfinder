@@ -16,6 +16,9 @@ result: $(cleans) ra
 result-small: $(cleans) ra-small
 	./ra-small $(limit) $(threads) $(cleans) > result-small
 
+badrules: $(cleans) list_useless_rules
+	./list_useless_rules $(limit) clean | tee badrules
+
 clean:
 	rm -f output/* conf/* clean/* result ra rf slimmer
 
@@ -24,6 +27,9 @@ mtwist.o: mtwist.c mtwist.h
 
 ra: ra.c
 	gcc -Wall -g2 -lavl -lpthread -O2 -o ra ra.c
+
+list_useless_rules: list_useless_rules.c
+	gcc -Wall -g2 -lavl -lpthread -O2 -o list_useless_rules list_useless_rules.c
 
 ra-small: ra-small.c mtwist.o
 	gcc -Wall -g2 -lavl -lpthread -O2 -o ra-small ra-small.c mtwist.o
