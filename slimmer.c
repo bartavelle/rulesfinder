@@ -138,8 +138,7 @@ int main(int argc, char ** argv)
 	struct s_rule staticrule;
 	struct s_rule * tmprule;
 	avl_node_t * snode;
-	int outfd;
-	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    FILE * out;
 	struct s_intlink * curlink;
 
 	setlimits();
@@ -160,8 +159,8 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	outfd = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, mode);
-	if(outfd<0)
+    out = fopen(argv[3], "w");
+	if(out==NULL)
 	{
 		perror(argv[3]);
 		return 2;
@@ -240,19 +239,19 @@ int main(int argc, char ** argv)
 		{
 			nbrules++;
 			len = strlen(tmprule->rule);
-			s_write(outfd, &len, sizeof(unsigned int));
-			s_write(outfd, tmprule->rule, len);
-			s_write(outfd, &tmprule->count, sizeof(unsigned int));
+			fwrite(&len, sizeof(unsigned int), 1, out);
+			fwrite(tmprule->rule, len, 1, out);
+			fwrite(&tmprule->count, sizeof(unsigned int), 1, out);
 			curlink = tmprule->root;
 			while(curlink)
 			{
-				s_write(outfd, &curlink->val, sizeof(unsigned int));
+				fwrite(&curlink->val, sizeof(unsigned int), 1, out);
 				curlink = curlink->next;
 			}
 		}
 		snode = snode->next;
 	}
-	close(outfd);
+	fclose(out);
 	fprintf(stderr, "%d rules after filtering\n", nbrules);
 	return 0;
 }
