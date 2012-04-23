@@ -9,14 +9,15 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 #include "mtwist.h"
 
 #define LINELEN         200
 #define MAXMEM          14500000000L
-#define MUTRATE         10
-#define INMUTRATE       20
+#define MUTRATE         20
+#define INMUTRATE       25
 #define NBRULES         64
-#define BASEPOPSIZE     128
+#define BASEPOPSIZE     32
 
 unsigned int matchlimit;
 unsigned int nbthreads;
@@ -352,19 +353,41 @@ tryagain:
     ind->fitness = calcfitness(ind);
 }
 
+void showbest()
+{
+    unsigned int i;
+    time_t t;
+    struct tm *tmp;
+    char stime[128];
+
+    t = time(NULL);
+    tmp = localtime(&t);
+    strftime(stime, sizeof(stime)-1, "%c", tmp);
+    fprintf(stderr, "%s %8d\t", stime, best.fitness);
+    for(i=0;i<NBRULES;i++)
+        fprintf(stderr, "'%s' ", best.b[i]->rule);
+    fprintf(stderr, "\n");
+}
 
 unsigned int updatetotal()
 {
     unsigned int i;
     unsigned int total;
+    unsigned int sb;
 
     total = 0;
+    sb = 0;
     for(i=0;i<POPSIZE;i++)
     {
         total += pop[i].fitness;
         if(pop[i].fitness > best.fitness)
+        {
             memcpy(&best, &pop[i], sizeof(struct s_individual));
+            sb = 1;
+        }
     }
+    if(sb)
+        showbest();
     return total;
 }
 
@@ -416,7 +439,7 @@ struct s_reproduction_args
     unsigned int index;
 };
 
-void reproduction(void * x)
+void * reproduction(void * x)
 {
     unsigned int i;
     struct s_individual npop[BASEPOPSIZE];
@@ -442,6 +465,7 @@ void reproduction(void * x)
         npop[i].fitness = calcfitness(&npop[i]);
     }
     memcpy(&pop[index*BASEPOPSIZE], npop, sizeof(npop));
+    return NULL;
 }
 
 int main(int argc, char ** argv)
@@ -568,12 +592,6 @@ int main(int argc, char ** argv)
     while(1)
     {
         total = updatetotal();
-        fprintf(stderr, "%06d %d/%d\t", gen, best.fitness, total);
-        for(i=0;i<NBRULES;i++)
-        {
-            fprintf(stderr, "'%s' ", best.b[i]->rule);
-        }
-        fprintf(stderr, "\n");
         gen++;
         for(i=0;i<nbthreads;i++)
         {
