@@ -230,14 +230,14 @@ int main(int argc, char ** argv)
 
 	while(fgets(line, LINELEN-1, dictionnary))
 	{
-		nblines++;
-		if(nblines % 1000000 == 0)
-			fprintf(stderr, "%dM dictionnary lines integrated\n", nblines/1000000);
 		len = strlen(line);
 		if(len>MAXLEN)
 			continue;
         if(len<minmatch)
             continue;
+		nblines++;
+		if(nblines % 1000000 == 0)
+			fprintf(stderr, "%dM dictionnary lines integrated\n", nblines/1000000);
 		line[len-1]=0; // trim !
 		SETBIT(bloom, hash(line));
 		SETBIT(bloom_cityhash, cityhash(line));
