@@ -253,7 +253,7 @@ int main(int argc, char ** argv)
 	{
 		nbpass++;
 		if(nbpass % 500000 == 0)
-			fprintf(stderr, "%.1fM passwords analyzed\n", ((float)nbpass)/1000000.0);
+			fprintf(stderr, "%.1fM passwords analyzed [%s]\n", ((float)nbpass)/1000000.0, argv[3]);
 		maxlen = 0;
 		maxstart = 0;
 		memset(curstart, 0, sizeof(curstart));
