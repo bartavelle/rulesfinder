@@ -41,10 +41,10 @@ slimmer: slimmer.c
 	gcc -Wall -g2 -lavl -O2 -o slimmer slimmer.c 
 
 clean/%.rule: output/%.out slimmer
-	./slimmer $(limit) $< $@
+	zcat $< | ./slimmer $(limit) - $@
 
 output/%.out: conf/%.conf rf
-	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" > $@
+	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" $(minmatch) | gzip -9 > $@
 
 conf/%.conf: rules/%.rule john.conf.skel
 	cat john.conf.skel $< > $@ 
