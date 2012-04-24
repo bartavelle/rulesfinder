@@ -299,7 +299,6 @@ int main(int argc, char ** argv)
 	}
 
 	fprintf(stderr, "%d passwords analyzed, %d matches, %d false positives\n", nbpass, nbmatch, nbfp);
-	fprintf(stderr, "14339517 passwords analyzed, 10692204 matches, 411637 false positives\n");
 
 	return 0;
 }
