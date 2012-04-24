@@ -152,7 +152,10 @@ int main(int argc, char ** argv)
 	if(threshold == 0)
 		usage();
 
-	input = fopen(argv[2], "r");
+    if(strcmp(argv[2], "-") == 0)
+        input = stdin;
+    else
+        input = fopen(argv[2], "r");
 	if(input == NULL)
 	{
 		perror(argv[2]);
