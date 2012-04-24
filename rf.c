@@ -125,7 +125,7 @@ unsigned int nbmatch;
 
 void usage(void)
 {
-	printf("usage: rulesfinder dictionnary password_file ruleinfo\n");
+	printf("usage: rulesfinder dictionnary password_file ruleinfo [minmatch]\n");
 	exit(1);
 }
 
@@ -175,6 +175,7 @@ int main(int argc, char ** argv)
 	unsigned int maxstart;
 	unsigned char ln2[LINELEN];
 	unsigned int len;
+    unsigned int minmatch;
 
 	rlim.rlim_cur = MAXMEM;
 	rlim.rlim_max = MAXMEM;
@@ -184,9 +185,21 @@ int main(int argc, char ** argv)
 		return 3;
 	}
 
-	if(argc != 4)
+	if( (argc != 4) && (argc != 5) )
 		usage();
 	nblines = 0;
+
+    if(argc == 5)
+    {
+        minmatch = atoi(argv[4]);
+        if(minmatch == 0)
+        {
+            fprintf(stderr, "can't parse %s as int\n", argv[4]);
+            return 6;
+        }
+    }
+    else
+        minmatch = 1;
 
 	/* arbre contenant le dictionnaire pour éviter les FP */
 	sroot = avl_alloc_tree((avl_compare_t)strcmp, (avl_freeitem_t)free);
@@ -223,6 +236,8 @@ int main(int argc, char ** argv)
 		len = strlen(line);
 		if(len>MAXLEN)
 			continue;
+        if(len<minmatch)
+            continue;
 		line[len-1]=0; // trim !
 		SETBIT(bloom, hash(line));
 		SETBIT(bloom_cityhash, cityhash(line));
@@ -277,7 +292,7 @@ int main(int argc, char ** argv)
 				}
 			}
 		}
-		if(maxlen==0)
+        if(maxlen<minmatch)
 			continue;
 		line[strlen((char*)line)-1] = 0;
 		printf("%s\t%s\t", argv[3], line);
