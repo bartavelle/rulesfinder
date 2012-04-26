@@ -202,6 +202,7 @@ void * load_rules(unsigned int * tid)
 	//unsigned int * pcurval;
 	unsigned int i;
 	struct s_rule_link * link;
+    unsigned int nbloaded;
 
 	unsigned int jobid;
 
@@ -228,8 +229,8 @@ void * load_rules(unsigned int * tid)
 			continue;
 		}
 
-		fprintf(stderr, "loading from file %s\n", rulejob[jobid].filename);
 
+        nbloaded = 0;
 		while(1)
 		{
 			if(read(rulefd, &curval, sizeof(unsigned int)) != sizeof(unsigned int))
@@ -252,6 +253,7 @@ void * load_rules(unsigned int * tid)
 			}
             if(nbpwds >= matchlimit)
             {
+                nbloaded++;
                 link = newlink(rulestr);
                 for(i=0;i<nbpwds;i++)
                 {
@@ -281,6 +283,7 @@ void * load_rules(unsigned int * tid)
 
 		close(rulefd);
 
+		fprintf(stderr, "%s loaded [%d]\n", rulejob[jobid].filename, nbloaded);
 
 	}
 	fprintf(stderr, "[%d] EXITS\n", *tid);
