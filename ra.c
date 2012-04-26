@@ -250,22 +250,33 @@ void * load_rules(unsigned int * tid)
 				fprintf(stderr, "could not read nbpwd\n");
 				break;
 			}
-			link = newlink(rulestr);
-			for(i=0;i<nbpwds;i++)
-			{
-				//pcurval = xmalloc(sizeof(unsigned int));
-				//if( read(rulefd, pcurval, sizeof(unsigned int)) != sizeof(unsigned int) )
-				if( read(rulefd, &curval, sizeof(unsigned int)) != sizeof(unsigned int) )
-				{
-					fprintf(stderr, "could not read password %d/%d\n", i, nbpwds);
-					break;
-				}
-				avl_insert(link->coverage, curval);
-			}
-			link->next = rulejob[jobid].root;
-			if(rulejob[jobid].tail == NULL)
-                                        rulejob[jobid].tail = link;
-			rulejob[jobid].root = link;
+            if(nbpwds >= matchlimit)
+            {
+                link = newlink(rulestr);
+                for(i=0;i<nbpwds;i++)
+                {
+                    //pcurval = xmalloc(sizeof(unsigned int));
+                    //if( read(rulefd, pcurval, sizeof(unsigned int)) != sizeof(unsigned int) )
+                    if( read(rulefd, &curval, sizeof(unsigned int)) != sizeof(unsigned int) )
+                    {
+                        fprintf(stderr, "could not read password %d/%d\n", i, nbpwds);
+                        break;
+                    }
+                    if(avl_insert(link->coverage, curval) == NULL)
+                    {
+                        perror("avl_insert");
+                        exit(1);
+                    }
+                }
+                link->next = rulejob[jobid].root;
+                if(rulejob[jobid].tail == NULL)
+                    rulejob[jobid].tail = link;
+                rulejob[jobid].root = link;
+            }
+            else
+            {
+                lseek(rulefd, sizeof(unsigned int)*nbpwds, SEEK_CUR);
+            }
 		}
 
 		close(rulefd);
