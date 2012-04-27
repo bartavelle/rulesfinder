@@ -4,20 +4,21 @@ cleans := $(patsubst rules/%,clean/%,$(wildcard rules/*))
 pass = ~/tools/john/run/password.lst
 dico = /usr/share/dict/american-english
 john = ~/tools/john/run/john
-limit = 10
+limitfile = limit
 threads = 6
+minmatch = 4
 
 .SECONDARY: 
 
 .PHONY: all clean
-result: $(cleans) ra
-	./ra $(limit) $(threads) $(cleans) > result
+result: $(cleans) ra $(limitfile)
+	./ra `cat $(limitfile)` $(threads) $(cleans) > result
 
-result-small: $(cleans) ra-small
-	./ra-small $(limit) $(threads) $(cleans) > result-small
+result-small: $(cleans) ra-small $(limitfile)
+	./ra-small `cat $(limitfile)` $(threads) $(cleans) > result-small
 
-badrules: $(cleans) list_useless_rules
-	./list_useless_rules $(limit) clean | tee badrules
+badrules: $(cleans) list_useless_rules $(limitfile)
+	./list_useless_rules `cat $(limitfile)` clean | tee badrules
 
 clean:
 	rm -f output/* conf/* clean/* result ra rf slimmer
@@ -40,10 +41,10 @@ rf: rf.c
 slimmer: slimmer.c
 	gcc -Wall -g2 -lavl -O2 -o slimmer slimmer.c 
 
-clean/%.rule: output/%.out slimmer
-	zcat $< | ./slimmer $(limit) - $@
+clean/%.rule: output/%.out slimmer $(limitfile)
+	zcat $< | ./slimmer `cat $(limitfile)` - $@
 
-output/%.out: conf/%.conf rf
+output/%.out: conf/%.conf rf $(dico) $(pass)
 	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" $(minmatch) | gzip -9 > $@
 
 conf/%.conf: rules/%.rule john.conf.skel
