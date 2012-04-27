@@ -270,7 +270,7 @@ int main(int argc, char ** argv)
 			for(j=0;j<MAXLEN;j++)
 			{
 				/* si on ne bat pas le maxlen courant ça ne sert à rien */
-				if( i-curstart[j] <= maxlen )
+				if( i-curstart[j]+1 < maxlen )
 					continue;
 				/* check bloom filter */
 				if(GETBIT(bloom, curhashes[j]))
@@ -281,7 +281,7 @@ int main(int argc, char ** argv)
 					{
 						if(avl_search(sroot, ln2)) /* evitons les FP */
 						{
-							maxlen = i-curstart[j];
+							maxlen = i-curstart[j]+1;
 							maxstart = curstart[j];
 						}
 						else
@@ -304,11 +304,11 @@ int main(int argc, char ** argv)
 		}
 		else
 			printf("\t");
-		if(maxstart+maxlen+1<strlen((char*)line))
-			printf("%s\t", line + maxstart + maxlen + 1);
+		if(maxstart+maxlen<strlen((char*)line))
+			printf("%s\t", line + maxstart + maxlen);
 		else
 			printf("\t");
-		line[maxstart+maxlen+1] = 0;
+		line[maxstart+maxlen] = 0;
 		printf("%s\t%d\n", line+maxstart, nbpass);
 		nbmatch++;
 	}
