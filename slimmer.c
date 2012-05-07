@@ -215,7 +215,7 @@ int main(int argc, char ** argv)
 		}
 		if(strlen(line+linepart[3]))
 		{
-			strcat(rulestr, " Al\"");
+			strcat(rulestr, " Az\"");
 			strcat(rulestr, line+linepart[3]);
 			strcat(rulestr, "\"");
 		}
