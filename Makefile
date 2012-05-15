@@ -27,19 +27,19 @@ mtwist.o: mtwist.c mtwist.h
 	gcc -Wall -g2 -O2 -c -o mtwist.o mtwist.c
 
 ra: ra.c
-	gcc -Wall -g2 -lavl -lpthread -O2 -o ra ra.c
+	gcc -Wall -g2 -O2 -o ra ra.c -lavl -pthread
 
 list_useless_rules: list_useless_rules.c
-	gcc -Wall -g2 -lavl -lpthread -O2 -o list_useless_rules list_useless_rules.c
+	gcc -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread 
 
 ra-small: ra-small.c mtwist.o
-	gcc -Wall -g2 -lavl -lpthread -O2 -o ra-small ra-small.c mtwist.o
+	gcc -Wall -g2 -O2 -o ra-small ra-small.c mtwist.o -lavl -lpthread 
 
 rf: rf.c
-	gcc -Wall -g2 -lavl -O2 -o rf rf.c
+	gcc -Wall -g2 -O2 -o rf rf.c -lavl
 
 slimmer: slimmer.c
-	gcc -Wall -g2 -lavl -O2 -o slimmer slimmer.c 
+	gcc -Wall -g2 -O2 -o slimmer slimmer.c -lavl
 
 clean/%.rule: output/%.out slimmer $(limitfile)
 	zcat $< | ./slimmer `cat $(limitfile)` - $@
