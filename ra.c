@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 #define LINELEN         200
-#define MAXMEM          14500000000L
+#define MAXMEM          28000000000L
 
 unsigned int matchlimit;
 unsigned int nbthreads;
