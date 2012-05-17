@@ -45,7 +45,7 @@ clean/%.rule: output/%.out slimmer $(limitfile)
 	zcat $< | ./slimmer `cat $(limitfile)` - $@
 
 output/%.out: conf/%.conf rf $(dico) $(pass)
-	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" $(minmatch) | gzip -9 > $@
+	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" $(minmatch) | gzip -1 > $@
 
 conf/%.conf: rules/%.rule john.conf.skel
 	cat john.conf.skel $< > $@ 
