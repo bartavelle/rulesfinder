@@ -90,6 +90,7 @@ getDir dir = fmap (sort . filter (\x -> validName x && noswap x)) $ System.Direc
     validName = not . all (== '.')
     noswap = not . endswith ".swp"
 
+{- a bit complicated, this finds preprocessor blocks and unroll them -}
 data Tok = C [Char] | B [Char]
     deriving (Show)
 parserule :: String -> [String]
@@ -101,7 +102,7 @@ parserule r = let
         in  case b of
                 ""          -> [C a]
                 ('\\':x:xs) -> let ((C ls):xs') = tokenize xs
-                               in  C (x:ls) : xs'
+                               in  C (a ++ (x:ls)) : xs'
                 ('[':xs)    -> C a : tokenizeB xs
     tokenizeB :: String -> [Tok]
     tokenizeB str =
@@ -109,16 +110,18 @@ parserule r = let
         in  case b of
                 ""          -> error "Preprocessor block not closed!"
                 ('\\':x:xs) -> let ((B ls):xs') = tokenizeB xs
-                               in  B (x:ls) : xs'
+                               in  B (a ++ (x:ls)) : xs'
                 (']':xs)    -> B a : tokenize xs
     -- must be [ [single element], [multiple elements], [single element], ... ]
-    pblock :: String -> [[String]]
+    pblock :: String -> [String]
     pblock str =
-        let tstr = tokenize str
-        in trace (show tstr) []
+        let tstr = map tok2str $ tokenize str
+            tok2str :: Tok -> [[String]]
+            tok2str (C x) = [[x]]
+            tok2str (B x) = foldl' (\cur c -> cur ++ [[[c]]]) [] x
+        in map (concat . concat) $ sequence tstr
     preprocess :: [String] -> [String]
-    preprocess x = let w = pblock $ unwords x
-                    in concat w
+    preprocess x = pblock $ unwords x
     parts = filter (not . startswith "NBPWD=") aparts
     in case parts of
         (('#':_):_) -> []
