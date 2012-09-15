@@ -19,6 +19,8 @@ import Data.Char (ord,isDigit,digitToInt)
 
 import Text.Printf (printf)
 
+import Debug.Trace
+
 -- rewrite of systemOutput to handle binary flows
 systemOutput :: FilePath -> [String] -> Action (String, String)
 systemOutput path args = do
@@ -88,18 +90,46 @@ getDir dir = fmap (sort . filter (\x -> validName x && noswap x)) $ System.Direc
     validName = not . all (== '.')
     noswap = not . endswith ".swp"
 
-parserule :: String -> String
+data Tok = C [Char] | B [Char]
+    deriving (Show)
+parserule :: String -> [String]
 parserule r = let
-    parts = filter (not . startswith "NBPWD=") $ split " " r
+    aparts = split " " r
+    tokenize :: String -> [Tok]
+    tokenize str =
+        let (a,b) = break (\x -> (x == '\\') || (x == '[') ) str
+        in  case b of
+                ""          -> [C a]
+                ('\\':x:xs) -> let ((C ls):xs') = tokenize xs
+                               in  C (x:ls) : xs'
+                ('[':xs)    -> C a : tokenizeB xs
+    tokenizeB :: String -> [Tok]
+    tokenizeB str =
+        let (a,b) = break (\x -> (x == '\\') || (x == ']') ) str
+        in  case b of
+                ""          -> error "Preprocessor block not closed!"
+                ('\\':x:xs) -> let ((B ls):xs') = tokenizeB xs
+                               in  B (x:ls) : xs'
+                (']':xs)    -> B a : tokenize xs
+    -- must be [ [single element], [multiple elements], [single element], ... ]
+    pblock :: String -> [[String]]
+    pblock str =
+        let tstr = tokenize str
+        in trace (show tstr) []
+    preprocess :: [String] -> [String]
+    preprocess x = let w = pblock $ unwords x
+                    in concat w
+    parts = filter (not . startswith "NBPWD=") aparts
     in case parts of
-        []          -> error $ "Could not parse rule " ++ r
-        [a]         -> a
-        (":":xs)    -> unwords xs
-        _           -> unwords parts
+        (('#':_):_) -> []
+        []          -> []
+        [a]         -> preprocess [a]
+        (":":xs)    -> preprocess xs
+        _           -> preprocess parts
 
 
 parseRuleFile :: String -> Action [String]
-parseRuleFile fname = fmap (map parserule . lines) (readFile' fname)
+parseRuleFile fname = fmap (concatMap parserule . lines) (readFile' fname)
 
 checkrule :: FilePath -> [String] -> String -> Action Int
 checkrule johnexec args currule = do
@@ -129,9 +159,9 @@ main = do
     (johnexec:wordlist:anbrules:_) <- getArgs
     lrules <- getDir "rules"
     tests <- getDir "tests"
-    let totest = [("results/" ++ r ++ "-" ++ t, (r, t)) | r <- lrules, t <- tests]
+    let totest = [("results/" ++ r ++ "-" ++ t ++ "-" ++ anbrules, (r, t)) | r <- lrules, t <- tests]
         testmap = Map.fromList totest
-        nbrules = read anbrules
+        nbrules = read anbrules :: Int
     shake (shakeOptions{shakeThreads=1, shakeReport=Just "/tmp/rulebench.html"}) $ do
         want $ map fst totest
         "tmp/*" *> \dst -> do
