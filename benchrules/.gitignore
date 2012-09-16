@@ -1,0 +1,6 @@
+/build
+/build.hi
+/build.o
+/.shake.database
+/results/
+/tmp/
