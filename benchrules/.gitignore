@@ -4,3 +4,6 @@
 /.shake.database
 /results/
 /tmp/
+/*.log
+/bencher.conf.*
+/local.pot.*
