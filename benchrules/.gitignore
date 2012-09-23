@@ -7,3 +7,9 @@
 /*.log
 /bencher.conf.*
 /local.pot.*
+/curve*.csv
+/*.rec
+/plot
+/plot.hi
+/plot.o
+curve.gp
