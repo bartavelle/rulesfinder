@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Prelude hiding (catch)
@@ -17,14 +19,18 @@ import System.Directory
 import Data.List
 import Data.String.Utils
 import qualified Data.Map as Map
-import Data.Char (chr,ord,isDigit,digitToInt,isUpper)
+import Data.Char (ord,isDigit,digitToInt)
 import Data.Either
+
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 import Text.Printf (printf)
 
 import Mangling
 
-import Debug.Trace
+parseInt :: T.Text -> Int
+parseInt = T.foldl' (\v c -> v*10 + digitToInt c) 0
 
 substringP :: String -> String -> Maybe Int
 substringP _ []  = Nothing
@@ -111,15 +117,18 @@ lparseRuleFile fname = do
     let flavor = if isSubstring "hashcat" fname
                 then HashCat
                 else JTR
-    rules <- liftIO $ parseRuleFile flavor fname
-    let bad  = lefts rules
-        good = rights rules
-        rawshowns = map (showRule JTR) good
-        gshows = rights rawshowns
-        bshows = lefts  rawshowns
-    mapM_ putNormal bad
-    mapM_ putNormal bshows
-    return gshows
+    case flavor of
+        JTR -> liftIO $ fmap lines (readFile fname)
+        _   -> do
+            rules <- liftIO $ parseRuleFile flavor fname
+            let bad  = lefts rules
+                good = rights rules
+                rawshowns = map (showRule JTR) good
+                gshows = rights rawshowns
+                bshows = lefts  rawshowns
+            mapM_ putNormal bad
+            mapM_ putNormal bshows
+            return gshows
 
 checkrule :: FilePath -> [String] -> String -> String -> Action Int
 checkrule johnexec args lconf currule = do
@@ -144,34 +153,61 @@ toDummy src dst = withBinaryFile src ReadMode $ \fh -> (
     fmap (unlines . map todum . lines) (hGetContents fh)
         >>= writeFile dst )
 
+addStats :: (Int, [(Int, Int)]) -> T.Text -> (Int, [(Int, Int)])
+addStats (nbpwds, lst) line
+                | T.isInfixOf "Loaded a total of " line = let vala = head $ drop 5 $ T.words line
+                                                          in  (parseInt vala, lst)
+                | T.isInfixOf " - Rule #" line = let (curnb, curcracked) = head lst
+                                                 in (nbpwds, (curnb+1, curcracked) : lst)
+                | T.isInfixOf "+ Cracked " line = let (curnb, curcracked) = head lst
+                                                  in (nbpwds, (curnb, curcracked+1):(tail lst))
+                | otherwise = (nbpwds, lst)
+
+dropMulti :: [(Int, Int)] -> [(Int, Int)]
+dropMulti [] = []
+dropMulti [x] = [x]
+dropMulti (a@(a1,_):b@(b1,_):r) | a1 == b1  = dropMulti (b:r)
+                                | otherwise = a : dropMulti (b:r)
+
+parseLog :: String -> Action [Double]
+parseLog fname = do
+    (maxpwds, lst) <- fmap (foldl' addStats (0,[(0,0)]) . T.lines) (liftIO $ TIO.readFile fname)
+    let mx = fromIntegral maxpwds :: Double
+        rlst = map (\(a,b) -> (a, fromIntegral b / mx)) $ dropMulti $ reverse lst :: [(Int, Double)]
+    return (map snd rlst)
+
 main :: IO ()
 main = do
     (johnexec:wordlist:anbrules:_) <- getArgs
     lrules <- getDir "rules"
     tests <- getDir "tests"
-    let totest = [("results/" ++ r ++ "-" ++ t ++ "-" ++ anbrules, (r, t)) | r <- lrules, t <- tests]
+    let totest = [("results/" ++ wlbase ++ "/" ++ r ++ "-" ++ t ++ "-" ++ anbrules, (r, t)) | r <- lrules, t <- tests]
         testmap = Map.fromList totest
         nbrules = read anbrules :: Int
+        wlbase = takeBaseName wordlist
     shake (shakeOptions{shakeThreads=4, shakeReport=Just "/tmp/rulebench.html"}) $ do
         want $ map fst totest
-        "tmp/*" *> \dst -> do
+        ("tmp/" ++ wlbase ++ "/*") *> \dst -> do
             let basename = dropDirectory1 dst
                 testfile = combine "tests" basename
             need [testfile]
             liftIO $ toDummy testfile dst
-
-        "results/*" *> \dst -> do
+        ("results/" ++ wlbase ++ "/*") *> \dst -> do
             let (brulefile, btestfile) = testmap Map.! dst
                 rulefile = combine "rules" brulefile
                 testfile = combine "tmp" btestfile
-                localid  = brulefile ++ "." ++ btestfile ++ "." ++ show nbrules
+                localid  = wlbase ++ "." ++ brulefile ++ "." ++ btestfile ++ "." ++ show nbrules
                 lconf    = localconf ++ "." ++ localid
                 lpot     = potfile   ++ "." ++ localid
+                llog     = localid ++ ".log"
                 args = ["--format=dummy", "-rules:bencher", "-w:" ++ wordlist , "--config=" ++ lconf, "--pot:" ++ lpot, "--sess:" ++ localid,  testfile]
             need [johnexec, wordlist, testfile]
             rules <- lparseRuleFile rulefile
+            writeFileLines lconf ("[List.Rules:bencher]" : (take nbrules rules))
+            _ <- systemOutput johnexec args
             liftIO $ removeIfExists lpot
-            cracked <- mapM (checkrule johnexec args lconf) (take nbrules rules)
+            cracked <- parseLog llog
+            liftIO $ removeIfExists llog
             writeFile' dst $ show cracked
             liftIO $ removeIfExists lconf
             liftIO $ removeIfExists lpot

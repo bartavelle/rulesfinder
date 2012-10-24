@@ -41,18 +41,18 @@ histogram2d dp =
       fmap (Graph2D.lineSpec (LineSpec.title title LineSpec.deflt)) $
       Plot2D.list Graph2D.listLines dat) dp
 
-getstats :: (String, String) -> IO (String, [Double])
-getstats (fname, lname) = do
-    mdata <- fmap (scanl (+) 0 . read) (readFile ("results/" ++ fname))
+getstats :: String -> (String, String) -> IO (String, [Double])
+getstats dirname (fname, lname) = do
+    mdata <- fmap read (readFile ("results/" ++ dirname ++ "/" ++ fname))
     return (lname, mdata)
 
 main :: IO ()
 main = do
-    prefixname <- fmap head getArgs
+    (prefixname:dirname:_) <- getArgs
     let fprefix = '-' : prefixname
         fl = length fprefix
         rp = reverse . drop fl . reverse
-    mystats <- fmap (map (\x -> (x, rp x)) . filter (endswith fprefix)) (getDirectoryContents "results") >>= mapM getstats
+    mystats <- fmap (map (\x -> (x, rp x)) . filter (endswith fprefix)) (getDirectoryContents ("results/" ++ dirname)) >>= mapM (getstats dirname)
     Plot.plot X11.cons (histogram2d mystats)
     print "done"
 
