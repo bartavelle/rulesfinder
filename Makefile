@@ -14,6 +14,12 @@ minmatch = 4
 result: $(cleans) ra $(limitfile)
 	./ra `cat $(limitfile)` $(threads) $(cleans) > result
 
+removeknown: removeknown.c cityhash.c
+	gcc -Wall -g2 -O2 -o removeknown removeknown.c
+
+cleanpass: $(pass) $(dico) removeknown
+	./removeknown $(dico) < $(pass) > cleanpass
+
 result-small: $(cleans) ra-small $(limitfile)
 	./ra-small `cat $(limitfile)` $(threads) $(cleans) > result-small
 
@@ -30,12 +36,12 @@ ra: ra.c
 	gcc -Wall -g2 -O2 -o ra ra.c -lavl -pthread
 
 list_useless_rules: list_useless_rules.c
-	gcc -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread 
+	gcc -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread
 
 ra-small: ra-small.c mtwist.o
-	gcc -Wall -g2 -O2 -o ra-small ra-small.c mtwist.o -lavl -lpthread 
+	gcc -Wall -g2 -O2 -o ra-small ra-small.c mtwist.o -lavl -lpthread
 
-rf: rf.c
+rf: rf.c cityhash.c
 	gcc -Wall -g2 -O2 -o rf rf.c -lavl
 
 slimmer: slimmer.c
@@ -44,9 +50,9 @@ slimmer: slimmer.c
 clean/%.rule: output/%.out slimmer $(limitfile)
 	zcat $< | ./slimmer `cat $(limitfile)` - $@
 
-output/%.out: conf/%.conf rf $(dico) $(pass)
-	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - $(pass) "`cat rules/$*.rule`" $(minmatch) | gzip -1 > $@
+output/%.out: conf/%.conf rf $(dico) cleanpass
+	$(john) -w:$(dico) -sess:$* -rules:xxx --config:$< -stdout | ./rf - cleanpass "`cat rules/$*.rule`" $(minmatch) | gzip -1 > $@
 
 conf/%.conf: rules/%.rule john.conf.skel
-	cat john.conf.skel $< > $@ 
+	cat john.conf.skel $< > $@
 
