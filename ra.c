@@ -52,12 +52,14 @@ struct s_rule
 {
 	char * rule;
 	avl_tree_t * coverage;
+    unsigned long pwtested;
 };
 
 struct s_rule_link
 {
 	char * rule;
 	avl_tree_t * coverage;
+    unsigned long pwtested;
 	struct s_rule_link * next;
 };
 
@@ -148,12 +150,13 @@ int ptr_cmp(unsigned int * a, unsigned int * b)
 	return 0;
 }
 
-struct s_rule_link * newlink(char * rule)
+struct s_rule_link * newlink(char * rule, unsigned long pwtested)
 {
 	struct s_rule_link * out;
 
 	out = xmalloc(sizeof(struct s_rule_link));
 	out->rule = strdup(rule);
+    out->pwtested = pwtested;
 	if(out->rule == NULL)
 	{
 		perror("strdup");
@@ -194,7 +197,6 @@ void dict_free(struct s_dictentry * a)
 
 void * load_rules(unsigned int * tid)
 {
-	struct s_rule_link * root;
 	int rulefd;
 	char rulestr[LINELEN];
 	unsigned int curval;
@@ -205,10 +207,10 @@ void * load_rules(unsigned int * tid)
     unsigned int nbloaded;
 
 	unsigned int jobid;
+    unsigned long pwtested;
 
 	while(1)
 	{
-		root = NULL;
 		/* select jobid */
 		pthread_mutex_lock( &rj_mutex );
 		for(jobid=0;jobid<nbfiles;jobid++)
@@ -246,6 +248,11 @@ void * load_rules(unsigned int * tid)
 				break;
 			}
 			rulestr[curval]=0;
+			if(read(rulefd, &pwtested, sizeof(unsigned long)) != sizeof(unsigned long))
+			{
+				fprintf(stderr, "could not read nb pwd tested\n");
+				break;
+			}
 			if(read(rulefd, &nbpwds, sizeof(unsigned int)) != sizeof(unsigned int))
 			{
 				fprintf(stderr, "could not read nbpwd\n");
@@ -254,7 +261,7 @@ void * load_rules(unsigned int * tid)
             if(nbpwds >= matchlimit)
             {
                 nbloaded++;
-                link = newlink(rulestr);
+                link = newlink(rulestr, pwtested);
                 for(i=0;i<nbpwds;i++)
                 {
                     //pcurval = xmalloc(sizeof(unsigned int));
@@ -296,8 +303,8 @@ int main(int argc, char ** argv)
 	pthread_t * threads;
 	unsigned int * ids;
 
-	unsigned int maxval;
-	unsigned int curval;
+	double maxval;
+	double curval;
 	struct s_rule_link * root;
 	struct s_rule_link * prevlink;
 	struct s_rule_link * curlink;
@@ -320,7 +327,7 @@ int main(int argc, char ** argv)
 	nbthreads = atoi(argv[2]);
 	if(nbthreads == 0)
 		nbthreads = 1;
-	
+
 	nbfiles = argc-3;
 	threads = xmalloc(sizeof(pthread_t)*nbthreads);
 	memset(threads, 0, sizeof(pthread_t)*nbthreads);
@@ -398,9 +405,9 @@ int main(int argc, char ** argv)
 						}
 					}
 				}
-				curval = avl_count(curlink->coverage);
+				curval = ((double) curlink->pwtested) / ((double) avl_count(curlink->coverage)) ;
 			}
-			if(curval<matchlimit)
+			if(avl_count(curlink->coverage) <matchlimit)
 			{
 				if(curlink->rule)
 				{
@@ -446,8 +453,8 @@ int main(int argc, char ** argv)
 		}
 
 		maxlink->coverage = NULL;
-		printf("%s NBPWD=%d\n", maxlink->rule, maxval);
-		fprintf(stderr, "%s NBPWD=%d NBRULES=%d\n", maxlink->rule, maxval, nbleft);
+		printf("%s NBPWD=%d/%ld\n", maxlink->rule, avl_count(maxlink->coverage), maxlink->pwtested);
+		fprintf(stderr, "%s NBPWD=%d/%ld NBRULES=%d\n", maxlink->rule, avl_count(maxlink->coverage), maxlink->pwtested, nbleft);
 	}
 	return 0;
 }

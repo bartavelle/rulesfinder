@@ -92,6 +92,7 @@ unsigned long long load_rules(char * filename)
 	char rulestr[LINELEN];
 	unsigned int curval;
 	unsigned int nbpwds;
+    unsigned long testedpwds;
     unsigned long long total;
     char name[4096];
 
@@ -120,6 +121,11 @@ unsigned long long load_rules(char * filename)
             break;
         }
         rulestr[curval]=0;
+        if(read(rulefd, &testedpwds, sizeof(unsigned long)) != sizeof(unsigned long))
+        {
+            fprintf(stderr, "could not nb of tested passwords\n");
+            break;
+        }
         if(read(rulefd, &nbpwds, sizeof(unsigned int)) != sizeof(unsigned int))
         {
             fprintf(stderr, "could not read nbpwd\n");
@@ -150,7 +156,7 @@ int main(int argc, char ** argv)
 	matchlimit = atoi(argv[1]);
 	if(matchlimit == 0)
 		usage();
-	
+
     cleandir = opendir(argv[2]);
     if(cleandir == NULL)
     {

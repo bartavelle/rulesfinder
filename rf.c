@@ -71,7 +71,7 @@ inline unsigned int GETBIT(BLOOM_TYPE * ptr, unsigned long hash)
 #define HASH_INIT 0
 #define HASH_STEP(hash,nchar) hash = nchar + (hash << 6) + (hash << 16) - hash;
 
-unsigned int nblines;
+unsigned long nblines;
 unsigned int nbpass;
 unsigned int nbfp;
 unsigned int nbmatch;
@@ -102,7 +102,7 @@ void * xmalloc(unsigned int size)
 	if(cur)
 		return cur;
 	perror("malloc");
-	fprintf(stderr, "@ nblines=%d\n", nblines);
+	fprintf(stderr, "@ nblines=%ld\n", nblines);
 	exit(1);
 }
 
@@ -190,13 +190,13 @@ int main(int argc, char ** argv)
             continue;
 		nblines++;
 		if(nblines % 1000000 == 0)
-			fprintf(stderr, "%dM dictionnary lines integrated\n", nblines/1000000);
+			fprintf(stderr, "%ldM dictionnary lines integrated\n", nblines/1000000);
 		line[len-1]=0; // trim !
 		SETBIT(bloom, hash(line));
 		SETBIT(bloom_cityhash, cityhash(line));
 		avl_insert(sroot, strdup(line));
 	}
-	fprintf(stderr, "%d lines\n", nblines);
+	printf("%ld lines\n", nblines);
 	fclose(dictionnary);
 
 	nbpass = 0;

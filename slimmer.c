@@ -140,6 +140,7 @@ int main(int argc, char ** argv)
 	avl_node_t * snode;
     FILE * out;
 	struct s_intlink * curlink;
+    unsigned long nblines;
 
 	setlimits();
 	nblines = 0;
@@ -173,6 +174,13 @@ int main(int argc, char ** argv)
 	staticrule.rule = rulestr;
 
 	ruleroot = avl_alloc_tree((avl_compare_t)rule_compare, (avl_freeitem_t)rule_free);
+
+    fgets(line, LINELEN-1, input);
+    if(sscanf(line, "%ld lines\n", &nblines) != 1)
+    {
+        fprintf(stderr, "Could not parse line count\n");
+        return 3;
+    }
 
 	while(fgets(line, LINELEN-1, input))
 	{
@@ -230,7 +238,7 @@ int main(int argc, char ** argv)
 		curid = atoi(line+linepart[5]);
 		add_item(tmprule, curid);
 	}
-	fprintf(stderr, "parsing finished, %d lines, %d correct lines, %d rules\n", nblines, nbcorrect, nbrules);
+	fprintf(stderr, "parsing finished, %ld lines, %d correct lines, %d rules\n", nblines, nbcorrect, nbrules);
 	fclose(input);
 
 	snode = ruleroot->head;
@@ -245,6 +253,7 @@ int main(int argc, char ** argv)
 			fwrite(&len, sizeof(unsigned int), 1, out);
 			fwrite(tmprule->rule, len, 1, out);
 			fwrite(&tmprule->count, sizeof(unsigned int), 1, out);
+            fwrite(&nblines, sizeof(unsigned long), 1, out);
 			curlink = tmprule->root;
 			while(curlink)
 			{
