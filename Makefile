@@ -20,9 +20,6 @@ removeknown: removeknown.c cityhash.c
 cleanpass: $(pass) $(dico) removeknown
 	./removeknown $(dico) < $(pass) > cleanpass
 
-result-small: $(cleans) ra-small $(limitfile)
-	./ra-small `cat $(limitfile)` $(threads) $(cleans) > result-small
-
 badrules: $(cleans) list_useless_rules $(limitfile)
 	./list_useless_rules `cat $(limitfile)` clean | tee badrules
 
@@ -37,9 +34,6 @@ ra: ra.c
 
 list_useless_rules: list_useless_rules.c
 	gcc -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread
-
-ra-small: ra-small.c mtwist.o
-	gcc -Wall -g2 -O2 -o ra-small ra-small.c mtwist.o -lavl -lpthread
 
 rf: rf.c cityhash.c
 	gcc -Wall -g2 -O2 -o rf rf.c -lavl
