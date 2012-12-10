@@ -19,3 +19,5 @@ list_useless_rules
 badrules
 /removeknown
 /cleanpass
+/processtime
+/processWordlist

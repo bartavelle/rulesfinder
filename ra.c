@@ -104,7 +104,7 @@ unsigned long hash(char * str)
 
 void usage(void)
 {
-	printf("usage: rulenalyzer cutout nbthreads [rule files ...]\n");
+	printf("usage: rulenalyzer cutout nbthreads wordlistProcessingTime candidateProcessingTime [rule files ...]\n");
 	exit(0);
 }
 
@@ -317,9 +317,11 @@ int main(int argc, char ** argv)
 //	unsigned int * pcurindex;
 	unsigned int curindex;
 	unsigned int nbleft;
+    double wordlistProcessingTime, candidateProcessingTime;
+    char * endptr;
 
 	setlimits();
-	if(argc<4)
+	if(argc<6)
 		usage();
 	matchlimit = atoi(argv[1]);
 	if(matchlimit == 0)
@@ -327,8 +329,21 @@ int main(int argc, char ** argv)
 	nbthreads = atoi(argv[2]);
 	if(nbthreads == 0)
 		nbthreads = 1;
+    wordlistProcessingTime = strtod(argv[3], &endptr);
+    // weak check
+    if(endptr == argv[3])
+    {
+        fprintf(stderr, "Could not parse wordlistProcessingTime\n");
+        usage();
+    }
+    candidateProcessingTime = strtod(argv[5], &endptr);
+    if(endptr == argv[5])
+    {
+        fprintf(stderr, "Could not parse candidateProcessingTime\n");
+        usage();
+    }
 
-	nbfiles = argc-3;
+	nbfiles = argc-5;
 	threads = xmalloc(sizeof(pthread_t)*nbthreads);
 	memset(threads, 0, sizeof(pthread_t)*nbthreads);
 	ids = xmalloc(sizeof(unsigned int)*nbthreads);
@@ -339,7 +354,7 @@ int main(int argc, char ** argv)
 		rulejob[i].root = NULL;
 		rulejob[i].tail = NULL;
 		rulejob[i].done_by = -1;
-		rulejob[i].filename = argv[i+3];
+		rulejob[i].filename = argv[i+5];
 	}
 
 	for(i=0;i<nbthreads;i++)
@@ -405,7 +420,7 @@ int main(int argc, char ** argv)
 						}
 					}
 				}
-				curval = ((double) curlink->pwtested) / ((double) avl_count(curlink->coverage)) ;
+				curval = ((double) curlink->pwtested) / ( ((double) avl_count(curlink->coverage))*candidateProcessingTime + wordlistProcessingTime) ;
 			}
 			if( (curlink->coverage == NULL) || (avl_count(curlink->coverage) <matchlimit))
 			{

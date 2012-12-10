@@ -8,11 +8,23 @@ limitfile = limit
 threads = 6
 minmatch = 4
 
+# parameters used for tuning your rule usages
+# the first one is used to set which format should be used
+format  = des
+# the second one to decide the number of salts to be cracked
+nbsalts = 50
+
 .SECONDARY: 
 
 .PHONY: all clean
-result: $(cleans) ra $(limitfile)
-	./ra `cat $(limitfile)` $(threads) $(cleans) > result
+result: $(cleans) ra $(limitfile) processWordlist processtime
+	./ra `cat $(limitfile)` $(threads) $(cleans) `cat processtime` `cat processWordlist` > result
+
+processWordlist: $(dico) $(john)
+	/usr/bin/time --format="%e" $(john) -sess:benchProcessWordlist -w:$(dico) -stdout 2> /tmp/processWordlist > /dev/null && grep -v '^words' /tmp/processWordlist > processWordlist
+
+processtime: $(john) computeprocesstime.pl
+	$(john) -test:10 -format:$(format) | perl computeprocesstime.pl $(nbsalts) > processtime
 
 removeknown: removeknown.c cityhash.c
 	gcc -Wall -g2 -O2 -o removeknown removeknown.c
@@ -24,10 +36,7 @@ badrules: $(cleans) list_useless_rules $(limitfile)
 	./list_useless_rules `cat $(limitfile)` clean | tee badrules
 
 clean:
-	rm -f output/* conf/* clean/* result ra rf slimmer
-
-mtwist.o: mtwist.c mtwist.h
-	gcc -Wall -g2 -O2 -c -o mtwist.o mtwist.c
+	rm -f output/* conf/* clean/* result ra rf slimmer cleanpass removeknown processWordlist processtime
 
 ra: ra.c
 	gcc -Wall -g2 -O2 -o ra ra.c -lavl -pthread
