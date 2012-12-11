@@ -331,17 +331,19 @@ int main(int argc, char ** argv)
 		nbthreads = 1;
     wordlistProcessingTime = strtod(argv[3], &endptr);
     // weak check
-    if(endptr == argv[3])
+    if(*endptr == argv[3])
     {
         fprintf(stderr, "Could not parse wordlistProcessingTime\n");
         usage();
     }
-    candidateProcessingTime = strtod(argv[5], &endptr);
-    if(endptr == argv[5])
+    candidateProcessingTime = strtod(argv[4], &endptr);
+    if(*endptr == argv[4])
     {
         fprintf(stderr, "Could not parse candidateProcessingTime\n");
         usage();
     }
+
+    fprintf(stderr, "Parameters: %f / %f\n", wordlistProcessingTime, candidateProcessingTime);
 
 	nbfiles = argc-5;
 	threads = xmalloc(sizeof(pthread_t)*nbthreads);
