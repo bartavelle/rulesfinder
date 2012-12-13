@@ -343,7 +343,7 @@ int main(int argc, char ** argv)
         usage();
     }
 
-    fprintf(stderr, "Parameters: %f / %f\n", wordlistProcessingTime, candidateProcessingTime);
+    fprintf(stderr, "Wordlist processing time: %es / Candidate processing time: %es/candidate\n", wordlistProcessingTime, candidateProcessingTime);
 
 	nbfiles = argc-5;
 	threads = xmalloc(sizeof(pthread_t)*nbthreads);
