@@ -388,7 +388,7 @@ int main(int argc, char ** argv)
 	oldcoverage = NULL;
 	while(1)
 	{
-		maxval = 1e50;
+		maxval = 0;
 		curlink = root;
 		prevlink = NULL;
 		maxlink = NULL;
@@ -422,7 +422,7 @@ int main(int argc, char ** argv)
 						}
 					}
 				}
-				curval = ((double) curlink->pwtested) / ( ((double) avl_count(curlink->coverage))*candidateProcessingTime + wordlistProcessingTime) ;
+				curval = ((double) avl_count(curlink->coverage)) / ( ((double) curlink->pwtested )*candidateProcessingTime + wordlistProcessingTime) ;
 			}
 			if( (curlink->coverage == NULL) || (avl_count(curlink->coverage) <matchlimit))
 			{
@@ -443,7 +443,7 @@ int main(int argc, char ** argv)
 				free(tmplink);
 				continue;
 			}
-			if(curval<maxval)
+			if(curval>maxval)
 			{
 				maxval = curval;
 				maxlink = curlink;

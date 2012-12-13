@@ -18,7 +18,7 @@ nbsalts = 50
 
 .PHONY: all clean
 result: $(cleans) ra $(limitfile) processWordlist processtime
-	./ra `cat $(limitfile)` $(threads) `cat processtime` `cat processWordlist` $(cleans) > result
+	./ra `cat $(limitfile)` $(threads) `cat processWordlist` `cat processtime` $(cleans) > result
 
 processWordlist: $(dico) $(john)
 	/usr/bin/time --format="%e" $(john) -sess:benchProcessWordlist -w:$(dico) -stdout 2> /tmp/processWordlist > /dev/null && grep -v '^words' /tmp/processWordlist > processWordlist
