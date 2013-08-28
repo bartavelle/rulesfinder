@@ -21,7 +21,7 @@ result: $(cleans) ra $(limitfile) processWordlist processtime
 	./ra `cat $(limitfile)` $(threads) `cat processWordlist` `cat processtime` $(cleans) > result
 
 processWordlist: $(dico) $(john)
-	/usr/bin/time --format="%e" $(john) -sess:benchProcessWordlist -w:$(dico) -stdout 2> /tmp/processWordlist > /dev/null && grep -v '^words' /tmp/processWordlist > processWordlist
+	/usr/bin/time --format="%e" $(john) -sess:benchProcessWordlist -w:$(dico) -stdout 2> /tmp/processWordlist > /dev/null && egrep '^[0-9.]+$$' /tmp/processWordlist > processWordlist
 
 processtime: $(john) computeprocesstime.pl
 	$(john) -test:10 -format:$(format) | perl computeprocesstime.pl $(nbsalts) > processtime
