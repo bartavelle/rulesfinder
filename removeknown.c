@@ -47,8 +47,9 @@ int readwords(char * wordmap, unsigned long long size, struct s_wordlink ** hash
 		while( wordmap[we] != '\n' && wordmap[we] != '\r' )
 		{
 			we++;
+			// this means we reached the end of the file without finding a carriage return ..
 			if(we>=size)
-				return 1;
+				return 0;
 		}
 		wl = malloc(sizeof(struct s_wordlink));
 		if(wl == NULL)
@@ -141,7 +142,6 @@ int main(int argc, char ** argv)
 
 	if(readwords(wordmap, dstats.st_size, hashmap))
 	{
-		perror("readwords");
 		return 5;
 	}
 
