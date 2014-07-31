@@ -106,6 +106,8 @@ int check(char * word, struct s_wordlink ** hashmap)
 
 int main(int argc, char ** argv)
 {
+	int r;
+
 	if(argc != 2)
 	{
 		printf("Usage: %s dictionnary < wordlist\n", argv[0]);
@@ -140,9 +142,10 @@ int main(int argc, char ** argv)
 		return 4;
 	}
 
-	if(readwords(wordmap, dstats.st_size, hashmap))
+	if(r = readwords(wordmap, dstats.st_size, hashmap))
 	{
-		return 5;
+		fprintf(stderr, "readwords failed with code %d", r);
+		return r;
 	}
 
 	char line[256];
