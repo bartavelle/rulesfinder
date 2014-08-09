@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define LINELEN         200
 #define MAXMEM          28000000000L
@@ -273,6 +274,8 @@ void * load_rules(unsigned int * tid)
                     }
                     if(avl_insert(link->coverage, curval) == NULL)
                     {
+                        if(errno == EEXIST)
+                            continue;
                         perror("avl_insert");
                         exit(1);
                     }
