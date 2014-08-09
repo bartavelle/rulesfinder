@@ -199,15 +199,14 @@ main = do
                 localid  = wlbase ++ "." ++ brulefile ++ "." ++ btestfile ++ "." ++ show nbrules
                 lconf    = localconf ++ "." ++ localid
                 lpot     = potfile   ++ "." ++ localid
-                llog     = localid ++ ".log"
-                args = ["--format=dummy", "-rules:bencher", "-w:" ++ wordlist , "--config=" ++ lconf, "--pot:" ++ lpot, "--sess:" ++ localid,  testfile]
+                llog     = "logs/" ++ localid ++ ".log"
+                args = ["--format=dummy", "-rules:bencher", "-w:" ++ wordlist , "--config=" ++ lconf, "--pot:" ++ lpot, "--sess:logs/" ++ localid,  testfile]
             need [johnexec, wordlist, testfile]
             rules <- lparseRuleFile rulefile
             writeFileLines lconf ("[List.Rules:bencher]" : (take nbrules rules))
             _ <- systemOutput johnexec args
             liftIO $ removeIfExists lpot
             cracked <- parseLog llog
-            liftIO $ removeIfExists llog
             writeFile' dst $ show cracked
             liftIO $ removeIfExists lconf
             liftIO $ removeIfExists lpot
