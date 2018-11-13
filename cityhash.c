@@ -26,22 +26,22 @@ static uint64_t ShiftMix(uint64_t val) {
 }
 
 static uint64_t HashLen0to16(const char *s, size_t len) {
-	if (len > 8) {
-		uint64_t a = UNALIGNED_LOAD64(s);
-		uint64_t b = UNALIGNED_LOAD64(s + len - 8);
-		return HashLen16(a, RotateByAtLeast1(b + len, len)) ^ b;
-	}
-	if (len >= 4) {
-		uint64_t a = UNALIGNED_LOAD32(s);
-		return HashLen16(len + (a << 3), UNALIGNED_LOAD32(s + len - 4));
-	}
-	if (len > 0) {
-		uint8_t a = s[0];
-		uint8_t b = s[len >> 1];
-		uint8_t c = s[len - 1];
-		uint32_t y = ((uint32_t)a) + ( ((uint32_t)b) << 8);
-		uint32_t z = len + ( ((uint32_t) c) << 2);
-		return ShiftMix(y * k2 ^ z * k3) * k2;
-	}
-	return k2;
+    if (len > 8) {
+        uint64_t a = UNALIGNED_LOAD64(s);
+        uint64_t b = UNALIGNED_LOAD64(s + len - 8);
+        return HashLen16(a, RotateByAtLeast1(b + len, len)) ^ b;
+    }
+    if (len >= 4) {
+        uint64_t a = UNALIGNED_LOAD32(s);
+        return HashLen16(len + (a << 3), UNALIGNED_LOAD32(s + len - 4));
+    }
+    if (len > 0) {
+        uint8_t a = s[0];
+        uint8_t b = s[len >> 1];
+        uint8_t c = s[len - 1];
+        uint32_t y = ((uint32_t)a) + ( ((uint32_t)b) << 8);
+        uint32_t z = len + ( ((uint32_t) c) << 2);
+        return ShiftMix(y * k2 ^ z * k3) * k2;
+    }
+    return k2;
 }

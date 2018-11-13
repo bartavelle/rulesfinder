@@ -19,65 +19,65 @@ unsigned int nbfiles;
 
 struct s_rule
 {
-	char * rule;
+    char * rule;
 };
 
 struct s_rule_link
 {
-	char * rule;
-	struct s_rule_link * next;
+    char * rule;
+    struct s_rule_link * next;
 };
 
 struct s_rulejob
 {
-	char * filename;
-	struct s_rule_link * root;
-	struct s_rule_link * tail;
-	int done_by;
+    char * filename;
+    struct s_rule_link * root;
+    struct s_rule_link * tail;
+    int done_by;
 } * rulejob;
 
 struct s_rulefile
 {
-	char * name;
-	unsigned int nblines;
-	unsigned int nbrules;
+    char * name;
+    unsigned int nblines;
+    unsigned int nbrules;
 };
 
 void usage(void)
 {
-	printf("usage: list_useless_rules cutout nbthreads clean_directory\n");
-	exit(0);
+    printf("usage: list_useless_rules cutout nbthreads clean_directory\n");
+    exit(0);
 }
 
 void * xmalloc(unsigned int size)
 {
-	void * out;
-	out = malloc(size);
-	if(out)
-		return out;
-	perror("malloc");
-	exit(5);
+    void * out;
+    out = malloc(size);
+    if(out)
+        return out;
+    perror("malloc");
+    exit(5);
 }
 
 struct s_rule_link * newlink(char * rule)
 {
-	struct s_rule_link * out;
+    struct s_rule_link * out;
 
-	out = xmalloc(sizeof(struct s_rule_link));
-	out->rule = strdup(rule);
-	if(out->rule == NULL)
-	{
-		perror("strdup");
-		exit(50);
-	}
-	return out;
+    out = xmalloc(sizeof(struct s_rule_link));
+    out->rule = strdup(rule);
+    if(out->rule == NULL)
+    {
+        perror("strdup");
+        exit(50);
+    }
+    return out;
 }
 
 void setlimits(void)
 {
         struct rlimit rlim;
 
-	rlim.rlim_cur = MAXMEM;
+    rlim.rlim_cur = MAXMEM;
         rlim.rlim_max = MAXMEM;
         if(setrlimit(RLIMIT_AS, &rlim))
         {
@@ -88,10 +88,10 @@ void setlimits(void)
 
 unsigned long long load_rules(char * filename)
 {
-	int rulefd;
-	char rulestr[LINELEN];
-	unsigned int curval;
-	unsigned int nbpwds;
+    int rulefd;
+    char rulestr[LINELEN];
+    unsigned int curval;
+    unsigned int nbpwds;
     unsigned long testedpwds;
     unsigned long long total;
     char name[4096];
@@ -141,7 +141,7 @@ unsigned long long load_rules(char * filename)
 
     close(rulefd);
 
-	return total;
+    return total;
 }
 
 int main(int argc, char ** argv)
@@ -150,12 +150,12 @@ int main(int argc, char ** argv)
     struct dirent * curfile;
     unsigned long long curval;
 
-	setlimits();
-	if(argc!=3)
-		usage();
-	matchlimit = atoi(argv[1]);
-	if(matchlimit == 0)
-		usage();
+    setlimits();
+    if(argc!=3)
+        usage();
+    matchlimit = atoi(argv[1]);
+    if(matchlimit == 0)
+        usage();
 
     cleandir = opendir(argv[2]);
     if(cleandir == NULL)
@@ -173,5 +173,5 @@ int main(int argc, char ** argv)
             printf("%s %lld\n", curfile->d_name, curval);
     }
 
-	return 0;
+    return 0;
 }

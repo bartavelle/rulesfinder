@@ -10,7 +10,7 @@ minmatch = 4
 
 # parameters used for tuning your rule usages
 # the first one is used to set which format should be used
-format  = des
+format  = descrypt
 # the second one to decide the number of salts to be cracked
 nbsalts = 50
 
@@ -27,7 +27,7 @@ processtime: $(john) computeprocesstime.pl
 	$(john) -test:10 -format:$(format) | perl computeprocesstime.pl $(nbsalts) > processtime
 
 removeknown: removeknown.c cityhash.c
-	gcc -Wall -g2 -O2 -o removeknown removeknown.c
+	gcc -Werror -Wall -g2 -O2 -o removeknown removeknown.c
 
 cleanpass: $(pass) $(dico) removeknown
 	./removeknown $(dico) < $(pass) > cleanpass
@@ -39,16 +39,16 @@ clean:
 	rm -f output/* conf/* clean/* result ra rf slimmer cleanpass removeknown processWordlist processtime
 
 ra: ra.c
-	gcc -Wall -g2 -O2 -o ra ra.c -lavl -pthread
+	gcc -Werror -Wall -g2 -O2 -o ra ra.c -lavl -pthread
 
 list_useless_rules: list_useless_rules.c
-	gcc -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread
+	gcc -Werror -Wall -g2 -O2 -o list_useless_rules list_useless_rules.c -lavl -lpthread
 
 rf: rf.c cityhash.c
-	gcc -Wall -g2 -O2 -o rf rf.c -lavl
+	gcc -Werror -Wall -g2 -O2 -o rf rf.c -lavl
 
 slimmer: slimmer.c
-	gcc -Wall -g2 -O2 -o slimmer slimmer.c -lavl
+	gcc -Werror -Wall -g2 -O2 -o slimmer slimmer.c -lavl
 
 clean/%.rule: output/%.out slimmer $(limitfile)
 	zcat $< | ./slimmer `cat $(limitfile)` - $@

@@ -1,17 +1,16 @@
 #!/usr/bin/perl
 
 use strict;
-use Switch;
 
 sub calcspeed
 {
     my $speedcnt = shift;
     my $speedunit = shift;
     my $speedmult = 1;
-    switch($speedunit)
-    {
-        case 'M' { $speedmult = 1e6; }
-        case 'K' { $speedmult = 1e3; }
+    if( $speedunit == 'M') {
+      $speedmult = 1e6;
+    } elsif( $speedunit == 'K') {
+      $speedmult = 1e3;
     }
     return ($speedcnt * $speedmult);
 }
