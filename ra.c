@@ -237,6 +237,9 @@ void * load_rules(void * raw)
         nbloaded = 0;
         while(1)
         {
+						curval = 0;
+						pwtested = 0;
+						nbpwds = 0;
             if(read(rulefd, &curval, sizeof(unsigned int)) != sizeof(unsigned int))
                 break;
             if(curval>=(LINELEN-1))
@@ -266,6 +269,7 @@ void * load_rules(void * raw)
                 link = newlink(rulestr, pwtested);
                 for(i=0;i<nbpwds;i++)
                 {
+										curval = 0;
                     if( read(rulefd, &curval, sizeof(unsigned int)) != sizeof(unsigned int) )
                     {
                         fprintf(stderr, "could not read password %ld/%ld\n", i, nbpwds);
@@ -312,6 +316,7 @@ int main(int argc, char ** argv)
     struct s_rule_link * curlink;
     struct s_rule_link * tmplink;
     struct s_rule_link * maxlink;
+		//int maxrulelen = 500;
     avl_tree_t * oldcoverage;
     avl_node_t * scoverage;
     avl_node_t * scoverage2;
@@ -441,8 +446,9 @@ int main(int argc, char ** argv)
                 free(tmplink);
                 continue;
             }
-            if(curval>maxval)
+            if(curval>maxval) // || (curval == maxval && strlen(curlink->rule) < maxrulelen ) )
             {
+								//maxrulelen = strlen(curlink->rule);
                 maxval = curval;
                 maxlink = curlink;
             }
