@@ -316,7 +316,7 @@ int main(int argc, char ** argv)
     struct s_rule_link * curlink;
     struct s_rule_link * tmplink;
     struct s_rule_link * maxlink;
-		//int maxrulelen = 500;
+		int maxrulelen = 500;
     avl_tree_t * oldcoverage;
     avl_node_t * scoverage;
     avl_node_t * scoverage2;
@@ -446,9 +446,9 @@ int main(int argc, char ** argv)
                 free(tmplink);
                 continue;
             }
-            if(curval>maxval) // || (curval == maxval && strlen(curlink->rule) < maxrulelen ) )
+            if(curval>maxval || (curval == maxval && strlen(curlink->rule) < maxrulelen ) )
             {
-								//maxrulelen = strlen(curlink->rule);
+								maxrulelen = strlen(curlink->rule);
                 maxval = curval;
                 maxlink = curlink;
             }
