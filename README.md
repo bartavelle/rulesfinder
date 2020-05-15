@@ -1,9 +1,12 @@
+DEPRECATED
+==========
+
+Please use [the new version instead](https://github.com/synacktiv/rulesfinder).
+
 Rules finder
 ============
 
 This program computes a good set of mutation rules for John the Ripper for cracking a givent password list with a given dictionary, using predefined rules as a template. It uses a greedy algorithm to compute the best append/prepend rules that could be used in conjunction with the predefined rules.
-
-More details [here](http://tehlose.wordpress.com/category/mangling-rules-generation/).
 
 Basic setup
 -----------
